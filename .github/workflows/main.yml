@@ -1,0 +1,126 @@
+name: Build and Release RealID
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: master
+
+    - name: Cache Zig dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/zig
+          zig-cache
+        key: ${{ runner.os }}-zig-${{ hashFiles('build.zig.zon') }}
+        restore-keys: |
+          ${{ runner.os }}-zig-
+
+    - name: Build RealID
+      run: |
+        zig build -Doptimize=ReleaseFast
+        zig build test
+
+    - name: Create release artifacts
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        mkdir -p release
+        # Copy library
+        cp zig-out/lib/librealid.a release/
+        # Copy demo executable
+        cp zig-out/bin/realid-demo release/
+        # Copy header file
+        cp include/realid.h release/
+        # Create source archive
+        tar -czf release/realid-source-${{ github.ref_name }}.tar.gz \
+          --exclude='.git' \
+          --exclude='zig-out' \
+          --exclude='zig-cache' \
+          --exclude='.github' \
+          .
+        # Create binary archive
+        tar -czf release/realid-${{ github.ref_name }}-linux-x86_64.tar.gz \
+          -C release \
+          librealid.a realid-demo realid.h
+
+    - name: Upload release artifacts
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-artifacts
+        path: release/
+
+  release:
+    needs: build
+    runs-on: self-hosted
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: release-artifacts
+        path: release/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: RealID ${{ github.ref_name }}
+        body: |
+          ## RealID Release ${{ github.ref_name }}
+          
+          ### What's New
+          - Zero-Trust Identity Framework
+          - Device-specific key generation
+          - Quantum-resistant signatures
+          - Cross-platform compatibility
+          
+          ### Downloads
+          - `librealid.a` - Static library for linking
+          - `realid-demo` - Demo executable
+          - `realid.h` - C header file
+          - `realid-source-${{ github.ref_name }}.tar.gz` - Complete source code
+          - `realid-${{ github.ref_name }}-linux-x86_64.tar.gz` - Compiled binaries for Linux x86_64
+          
+          ### Installation
+          ```bash
+          # Extract binary release
+          tar -xzf realid-${{ github.ref_name }}-linux-x86_64.tar.gz
+          
+          # Link the library in your project
+          gcc your_project.c -L. -lrealid -o your_project
+          ```
+          
+          Built with Zig and zcrypto for maximum security and performance.
+        files: |
+          release/librealid.a
+          release/realid-demo
+          release/realid.h
+          release/realid-source-${{ github.ref_name }}.tar.gz
+          release/realid-${{ github.ref_name }}-linux-x86_64.tar.gz
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
