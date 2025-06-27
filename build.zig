@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) void {
     realid_module.addImport("zcrypto", zcrypto_mod);
 
     // Create the demo executable
-const exe = b.addExecutable(.{
+    const exe = b.addExecutable(.{
         .name = "realid-demo",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
