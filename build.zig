@@ -16,13 +16,14 @@ pub fn build(b: *std.Build) void {
     // Install the library
     b.installArtifact(realid_lib);
 
-    // Create the demo executable
-        // Added by zion add zcrypto
-    const zcrypto_mod = b.addModule("zcrypto", .{
-        .root_source_file = b.path(".zion/deps/zcrypto/src/root.zig"),
+    // Add zcrypto dependency
+    const zcrypto_dep = b.dependency("zcrypto", .{
         .target = target,
         .optimize = optimize,
     });
+    const zcrypto_mod = zcrypto_dep.module("zcrypto");
+
+    // Create the demo executable
 const exe = b.addExecutable(.{
         .name = "realid-demo",
         .root_source_file = b.path("src/main.zig"),

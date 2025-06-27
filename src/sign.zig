@@ -10,7 +10,9 @@ const RealIDError = types.RealIDError;
 /// Sign data with a RealID private key
 pub fn realid_sign(data: []const u8, private_key: RealIDPrivateKey) RealIDError!RealIDSignature {
     // Use zcrypto's Ed25519 signing
-    const signature = zcrypto.asym.signEd25519(data, private_key.bytes);
+    const signature = zcrypto.asym.signEd25519(data, private_key.bytes) catch {
+        return RealIDError.CryptoError;
+    };
     return RealIDSignature{ .bytes = signature };
 }
 
