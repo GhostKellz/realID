@@ -23,6 +23,14 @@ pub fn build(b: *std.Build) void {
     });
     const zcrypto_mod = zcrypto_dep.module("zcrypto");
 
+    // Export the realid module for other projects to import
+    const realid_module = b.addModule("realid", .{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    realid_module.addImport("zcrypto", zcrypto_mod);
+
     // Create the demo executable
 const exe = b.addExecutable(.{
         .name = "realid-demo",

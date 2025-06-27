@@ -1,17 +1,6 @@
 .{
     .name = .realid,
     .version = "0.2.1",
-    .fingerprint = 0x9a4d22d9a976889e,
-    .paths = .{
-        "build.zig",
-        "build.zig.zon",
-        "src",
-        "include",
-    },
     .dependencies = .{
-        .zcrypto = .{
-            .url = "https://github.com/ghostkellz/zcrypto/archive/refs/heads/main.tar.gz",
-            .hash = "zcrypto-0.0.0-rgQAIzgEBADjnAEqmjRN2TmhRa-O8lScNIa0xpkZS59t",
-        },
     },
 }
